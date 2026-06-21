@@ -374,7 +374,8 @@
     <div id="moduleGrid" class="module-grid">
         <div class="loading-text">⏳ 正在加载题库...</div>
     </div>
-    <div class="footer-note">💡 点击题号弹出完整题目 · 共1432题</div>
+    <!--<div class="footer-note">💡 点击题号弹出完整题目 · 共1432题</div>
+-->
 </div>
 
 <!-- 模态框 -->
@@ -496,7 +497,8 @@
             questionDB = data;
             totalQuestions = Object.keys(questionDB).length;
             questionDBLoaded = true;
-            console.log('✅ 题库加载成功，共 ' + totalQuestions + ' 道题');
+            //console.log('✅ 题库加载成功，共 ' + totalQuestions + ' 道题');
+			console.log('✅ 题库加载成功');
             return true;
         } catch (error) {
             console.error('❌ 加载题库失败:', error);
@@ -535,11 +537,12 @@
         const stats = countModuleQuestions();
         const total = stats.reduce((sum, s) => sum + s.count, 0);
         const bar = document.getElementById('statsBar');
-        bar.innerHTML = `
+        /**bar.innerHTML = `
             <span>📊 总题库: <span class="num">${totalQuestions}</span> 题</span>
             <span>📚 已分类: <span class="num">${total}</span> 题</span>
             ${stats.map(s => `<span>${s.name}: <span class="num">${s.count}</span></span>`).join('')}
         `;
+		**/
     }
 
     // ======================== 登录/退出逻辑 ========================
