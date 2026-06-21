@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>人工智能训练师模拟测试</title>
+    <title>模拟考试系统</title>
     <style>
         * {
             box-sizing: border-box;
@@ -254,6 +254,16 @@
             color: #4a6378;
             font-size: 18px;
         }
+        .debug-info {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 12px;
+            padding: 12px 16px;
+            margin: 10px 0;
+            font-size: 13px;
+            color: #495057;
+            display: none;
+        }
         @media (max-width: 700px) {
             .app {
                 padding: 16px;
@@ -267,7 +277,7 @@
 <body>
     <div class="app" id="app">
         <div class="flex" style="justify-content: space-between;">
-            <h1>📘 智人工智能训练师模拟测试</h1>
+            <h1>📘 模拟考试系统</h1>
             <div>
                 <button class="btn btn-outline" id="showWrongBtn" style="display:none;">📕 错题本 (<span id="wrongCount">0</span>)</button>
                 <button class="btn btn-outline" id="logoutBtn" style="display:none;">🚪 退出</button>
@@ -328,6 +338,9 @@
             <div id="wrongList" style="max-height:500px; overflow-y:auto;"></div>
             <p style="color:#7a6a5a; margin-top:12px;" id="wrongEmptyMsg">暂无错题，继续保持！</p>
         </div>
+
+        <!-- 调试信息 -->
+        <div id="debugInfo" class="debug-info"></div>
     </div>
 
     <script>
@@ -363,6 +376,7 @@
         const wrongEmptyMsg = document.getElementById('wrongEmptyMsg');
         const showWrongBtn = document.getElementById('showWrongBtn');
         const logoutBtn = document.getElementById('logoutBtn');
+        const debugInfo = document.getElementById('debugInfo');
 
         // ========== 辅助函数 ==========
         function shuffleArray(arr) {
@@ -373,37 +387,72 @@
             return arr;
         }
 
-        // 判断题目类型
+        // 判断题目类型 - 优化版，确保判断题被正确识别
         function getQuestionType(item) {
-            const ans = item.ans || '';
+            const ans = (item.ans || '').trim();
             const opts = item.opts || '';
             const qText = item.q || '';
+
+            // ===== 第一步：明确判断 =====
 
             // 1. 判断题：ans 是 "正确" 或 "错误"
             if (ans === '正确' || ans === '错误') {
                 return 'judge';
             }
 
-            // 2. 多选题：ans 包含逗号
+            // 2. 判断题：opts 包含 "正确" 和 "错误" 选项
+            const optLines = opts.split('\n').filter(s => s.trim() !== '');
+            const optTexts = optLines.map(s => s.replace(/^[A-D][.、]\s*/, '').trim());
+            const hasZhengque = optTexts.some(t => t === '正确' || t.includes('正确'));
+            const hasCuowu = optTexts.some(t => t === '错误' || t.includes('错误'));
+            if (hasZhengque && hasCuowu && optLines.length === 2) {
+                return 'judge';
+            }
+
+            // 3. 题干包含"判断"或"说法"且选项只有两个
+            if ((qText.includes('判断') || qText.includes('说法') || qText.includes('是否正确') || qText.includes('对还是错')) &&
+                optLines.length === 2) {
+                return 'judge';
+            }
+
+            // 4. 判断题：ans 是 "A" 且选项 A 和 B 分别是 "正确" 和 "错误"
+            if (ans === 'A' || ans === 'B') {
+                const optA = optLines.length > 0 ? optLines[0].replace(/^A[.、]\s*/, '').trim() : '';
+                const optB = optLines.length > 1 ? optLines[1].replace(/^B[.、]\s*/, '').trim() : '';
+                if ((optA === '正确' || optA.includes('正确')) && (optB === '错误' || optB.includes('错误'))) {
+                    return 'judge';
+                }
+                if ((optA === '错误' || optA.includes('错误')) && (optB === '正确' || optB.includes('正确'))) {
+                    return 'judge';
+                }
+            }
+
+            // ===== 第二步：多选题判断 =====
+
+            // 5. 多选题：ans 包含逗号
             if (ans.includes(',')) {
                 return 'multi';
             }
 
-            // 3. ans 长度 > 1 且不是单字母 → 多选题
+            // 6. ans 长度 > 1 且不是单字母 → 多选题
             if (ans.length > 1 && !/^[A-D]$/.test(ans)) {
                 return 'multi';
             }
 
-            // 4. 题干包含"多选""多项""哪些"等关键词
-            if (qText.includes('多选') || qText.includes('多项') || qText.includes('哪些') || qText.includes('属于') || qText
-                .includes('包含')) {
-                if (ans.length > 1) {
+            // 7. 题干包含"多选""多项""哪些""属于""包含"等关键词
+            const multiKeywords = ['多选', '多项', '哪些', '包含', '属于', '包括', '以下'];
+            if (multiKeywords.some(kw => qText.includes(kw))) {
+                if (ans.length > 1 || ans.includes(',')) {
+                    return 'multi';
+                }
+                // 如果题干有这些关键词但 ans 是单字母，检查选项数量和内容
+                if (optLines.length >= 4) {
+                    // 可能有多个正确选项但没有用逗号分隔，如 ans="ABC"
                     return 'multi';
                 }
             }
 
-            // 5. 通过选项数量判断
-            const optLines = opts.split('\n').filter(s => s.trim() !== '');
+            // 8. 通过选项数量判断：4个以上选项且答案为多字母
             if (optLines.length >= 4 && ans.length > 1) {
                 const isMultiAns = ans.split('').every(ch => /^[A-D]$/.test(ch));
                 if (isMultiAns && ans.length > 1) {
@@ -411,6 +460,7 @@
                 }
             }
 
+            // ===== 默认：单选题 =====
             return 'single';
         }
 
@@ -426,7 +476,7 @@
             return [ans.trim()];
         }
 
-        // 从原始题库抽取：单选70，多选20，判断10（按顺序）
+        // 从原始题库抽取
         function extractQuestions(raw) {
             const singles = [];
             const judges = [];
@@ -447,6 +497,14 @@
                 }
             }
 
+            // 显示统计信息
+            const total = singles.length + judges.length + multiples.length;
+            const debugText =
+                `📊 题库统计: 单选 ${singles.length} 题, 多选 ${multiples.length} 题, 判断 ${judges.length} 题, 总计 ${total} 题`;
+            console.log(debugText);
+            debugInfo.textContent = debugText;
+            debugInfo.style.display = 'block';
+
             // 随机抽取
             const pick = (arr, n) => shuffleArray([...arr]).slice(0, Math.min(n, arr.length));
 
@@ -458,7 +516,8 @@
             let combined = [...selectedSingles, ...selectedMultiples, ...selectedJudges];
 
             // 更新统计显示
-            statsLabel.textContent = `📋 单选题 ${selectedSingles.length} · 多选题 ${selectedMultiples.length} · 判断题 ${selectedJudges.length}`;
+            statsLabel.textContent =
+                `📋 单选题 ${selectedSingles.length} · 多选题 ${selectedMultiples.length} · 判断题 ${selectedJudges.length}`;
 
             let globalIndex = 0;
             return combined.map((q) => {
@@ -494,12 +553,12 @@
 
             let html = '';
 
-            // 渲染函数
-            const renderSection = (questions, title, badgeColor = '#dce6f0') => {
+            // 渲染单个题型区域
+            const renderSection = (questions, title) => {
                 if (!questions.length) return '';
                 let sectionHtml =
                     `<div class="section-title">${title} <span class="count">共 ${questions.length} 题</span></div>`;
-                questions.forEach((q, idx) => {
+                questions.forEach((q) => {
                     const qNum = q.index + 1;
                     const typeLabel = q.type === 'single' ? '单选' : (q.type === 'judge' ? '判断' : '多选');
                     const isSubmittedClass = (q.isCorrect !== null) ? (q.isCorrect ? 'correct' : 'wrong') : '';
@@ -508,7 +567,15 @@
                     const opts = q.optsArray || [];
 
                     if (q.type === 'judge') {
-                        const judgeOpts = ['正确', '错误'];
+                        // 判断题选项：从 opts 中提取，如果没有则使用默认
+                        let judgeOpts = ['正确', '错误'];
+                        if (opts.length === 2) {
+                            const opt1 = opts[0].replace(/^[A-D][.、]\s*/, '').trim();
+                            const opt2 = opts[1].replace(/^[A-D][.、]\s*/, '').trim();
+                            if ((opt1 === '正确' || opt1 === '错误') && (opt2 === '正确' || opt2 === '错误')) {
+                                judgeOpts = [opt1, opt2];
+                            }
+                        }
                         optsHtml = judgeOpts.map(opt => {
                             const checked = (q.userAnswer === opt) ? 'checked' : '';
                             const disabled = isSubmitted ? 'disabled' : '';
@@ -634,6 +701,7 @@
                         isCorrect = (sortedUser === sortedCorrect);
                     }
                 } else {
+                    // 判断题：用户选择的是"正确"或"错误"，直接比较
                     isCorrect = (userAns === q.ans);
                 }
 
@@ -782,8 +850,7 @@
                 }
                 const data = await response.json();
                 fullQuestions = data;
-				statusMsg.textContent = `✅ 题库加载完成`;
-                //statusMsg.textContent = `✅ 题库加载完成 (${Object.keys(data).length} 题)`;
+                statusMsg.textContent = `✅ 题库加载完成 (${Object.keys(data).length} 题)`;
                 isLoading = false;
             } catch (error) {
                 console.error('加载题库失败:', error);
