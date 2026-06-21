@@ -921,19 +921,8 @@
                 }
                 const data = await response.json();
                 fullQuestions = data;
-
-                // 统计并显示
-                const ids = Object.keys(data);
-                //statusMsg.textContent = `✅ 题库加载完成 (${ids.length} 题)`;
 				statusMsg.textContent = `✅ 题库加载完成`;
-                // 先统计再显示
-                stats = countQuestions(data);
-                updateStatsUI();
-
-                // 预抽取一组题目
-                examQuestions = extractQuestions(data);
-                renderExam();
-
+                //statusMsg.textContent = `✅ 题库加载完成 (${Object.keys(data).length} 题)`;
                 isLoading = false;
             } catch (error) {
                 console.error('加载题库失败:', error);
