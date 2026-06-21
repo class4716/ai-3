@@ -337,7 +337,7 @@
                 </div>
             </div>
 
-            <!-- 题库统计 -->
+            <!-- 题库统计 
             <div id="statsBar" class="stats-bar hidden">
                 <span class="item">📚 题库总览：</span>
                 <span class="item"><span class="tag-single">单选</span> <span class="num" id="totalSingle">0</span> 题</span>
@@ -345,7 +345,7 @@
                 <span class="item"><span class="tag-judge">判断</span> <span class="num" id="totalJudge">0</span> 题</span>
                 <span class="item">📌 合计：<span class="num" id="totalAll">0</span> 题</span>
             </div>
-
+			-->
             <div id="questionList"></div>
             <div class="mt-2 flex" style="justify-content: space-between;">
                 <span id="progressInfo" style="color:#3e668a;">已选 0 / 100 题</span>
@@ -924,8 +924,8 @@
 
                 // 统计并显示
                 const ids = Object.keys(data);
-                statusMsg.textContent = `✅ 题库加载完成 (${ids.length} 题)`;
-
+                //statusMsg.textContent = `✅ 题库加载完成 (${ids.length} 题)`;
+				statusMsg.textContent = `✅ 题库加载完成`;
                 // 先统计再显示
                 stats = countQuestions(data);
                 updateStatsUI();
