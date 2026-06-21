@@ -915,7 +915,7 @@
         // ========== 加载题库 ==========
         async function loadQuestionBank() {
             try {
-                const response = await fetch('十大知识点html.json');
+                const response = await fetch('question.json');
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
@@ -937,7 +937,7 @@
                 isLoading = false;
             } catch (error) {
                 console.error('加载题库失败:', error);
-                statusMsg.textContent = '❌ 题库加载失败，请确保 "十大知识点html.json" 文件在同一目录下';
+                statusMsg.textContent = '❌ 题库加载失败，请确保 "question.json" 文件在同一目录下';
                 isLoading = false;
             }
         }
