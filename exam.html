@@ -254,45 +254,6 @@
             color: #4a6378;
             font-size: 18px;
         }
-        .stats-bar {
-            background: #f0f5fe;
-            border-radius: 16px;
-            padding: 12px 20px;
-            margin: 10px 0 16px 0;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 20px;
-            font-size: 14px;
-            color: #1a3d5e;
-        }
-        .stats-bar .item {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        .stats-bar .num {
-            font-weight: 700;
-            font-size: 16px;
-            color: #0b2b4a;
-        }
-        .tag-single {
-            background: #d4e2f7;
-            padding: 2px 10px;
-            border-radius: 20px;
-            font-size: 12px;
-        }
-        .tag-multi {
-            background: #f7d4e2;
-            padding: 2px 10px;
-            border-radius: 20px;
-            font-size: 12px;
-        }
-        .tag-judge {
-            background: #d4f7e2;
-            padding: 2px 10px;
-            border-radius: 20px;
-            font-size: 12px;
-        }
         @media (max-width: 700px) {
             .app {
                 padding: 16px;
@@ -337,15 +298,6 @@
             </div>
         </div>
 
-        <!-- 题库统计
-        <div id="statsBar" class="stats-bar hidden">
-            <span class="item">📚 题库总览：</span>
-            <span class="item"><span class="tag-single">单选</span> <span class="num" id="totalSingle">0</span> 题</span>
-            <span class="item"><span class="tag-multi">多选</span> <span class="num" id="totalMulti">0</span> 题</span>
-            <span class="item"><span class="tag-judge">判断</span> <span class="num" id="totalJudge">0</span> 题</span>
-            <span class="item">📌 合计：<span class="num" id="totalAll">0</span> 题</span>
-        </div>
-		-->
         <div id="questionList"></div>
         <div class="mt-2 flex" style="justify-content: space-between;">
             <span id="progressInfo" style="color:#3e668a;">已选 0 / 100 题</span>
@@ -392,7 +344,6 @@
     let wrongBook = [];
     let currentWrongIds = new Set();
     let isLoading = true;
-    let stats = { single: 0, multi: 0, judge: 0 };
 
     // DOM 引用
     const loginArea = document.getElementById('loginArea');
@@ -408,11 +359,6 @@
     const userStatus = document.getElementById('userStatus');
     const statusMsg = document.getElementById('statusMsg');
     const statsLabel = document.getElementById('statsLabel');
-    const statsBar = document.getElementById('statsBar');
-    const totalSingle = document.getElementById('totalSingle');
-    const totalMulti = document.getElementById('totalMulti');
-    const totalJudge = document.getElementById('totalJudge');
-    const totalAll = document.getElementById('totalAll');
     const wrongCountSpan = document.getElementById('wrongCount');
     const wrongList = document.getElementById('wrongList');
     const wrongEmptyMsg = document.getElementById('wrongEmptyMsg');
@@ -493,22 +439,6 @@
         return [ans.trim()];
     }
 
-    function countQuestions(raw) {
-        let s = 0,
-            m = 0,
-            j = 0;
-        const ids = Object.keys(raw);
-        for (let id of ids) {
-            const item = raw[id];
-            if (!item || !item.q) continue;
-            const type = getQuestionType(item);
-            if (type === 'judge') j++;
-            else if (type === 'multi') m++;
-            else s++;
-        }
-        return { single: s, multi: m, judge: j };
-    }
-
     function extractQuestions(raw) {
         const singles = [],
             judges = [],
@@ -524,9 +454,6 @@
             else if (type === 'multi') multiples.push(newItem);
             else singles.push(newItem);
         }
-
-        stats = { single: singles.length, multi: multiples.length, judge: judges.length };
-        updateStatsUI();
 
         const pick = (arr, n) => shuffleArray([...arr]).slice(0, Math.min(n, arr.length));
 
@@ -557,14 +484,6 @@
             globalIndex++;
             return result;
         });
-    }
-
-    function updateStatsUI() {
-        totalSingle.textContent = stats.single;
-        totalMulti.textContent = stats.multi;
-        totalJudge.textContent = stats.judge;
-        totalAll.textContent = stats.single + stats.multi + stats.judge;
-        statsBar.classList.remove('hidden');
     }
 
     function renderExam() {
@@ -844,7 +763,7 @@
             wrongBookArea.classList.add('hidden');
             showWrongBtn.style.display = 'none';
         } else {
-            alert('用户名或密码错误！');
+            alert('用户名或密码错误！\n默认: user / user_123456');
         }
     }
 
@@ -872,15 +791,9 @@
             }
             const data = await response.json();
             fullQuestions = data;
-            const ids = Object.keys(data);
-            //statusMsg.textContent = `✅ 题库加载完成 (${ids.length} 题)`;
-			statusMsg.textContent = `✅ 题库加载完成`;
-            stats = countQuestions(data);
-            updateStatsUI();
-
+            statusMsg.textContent = '✅ 题库加载完成';
             examQuestions = extractQuestions(data);
             renderExam();
-
             isLoading = false;
         } catch (error) {
             console.error('加载题库失败:', error);
